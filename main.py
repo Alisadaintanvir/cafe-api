@@ -16,7 +16,7 @@ migrate = Migrate(app, db)
 
 # Cafe TABLE Configuration
 class Cafe(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(250), unique=True, nullable=False)
     map_url = db.Column(db.String(500), nullable=False)
     img_url = db.Column(db.String(500), nullable=False)
@@ -66,15 +66,50 @@ def search_cafe():
     return jsonify(error={"Not Found": "Sorry, we don't have a cafe at that location."})
 
 
-## HTTP POST - Create Record
+# HTTP POST - Create Record
 @app.route("/add", methods=['POST'])
-def add_cafe():
-    if request.method == "POST":
-        pass
+def post_new_cafe():
+    new_cafe = Cafe(
+        name=request.form.get("name"),
+        map_url=request.form.get("map_url"),
+        img_url=request.form.get("img_url"),
+        location=request.form.get("loc"),
+        has_sockets=bool(request.form.get("sockets")),
+        has_toilet=bool(request.form.get("toilet")),
+        has_wifi=bool(request.form.get("wifi")),
+        can_take_calls=bool(request.form.get("calls")),
+        seats=request.form.get("seats"),
+        coffee_price=request.form.get("coffee_price"),
+    )
+    db.session.add(new_cafe)
+    db.session.commit()
+    return jsonify(response={"success": "Successfully added the new cafe."})
 
-## HTTP PUT/PATCH - Update Record
 
-## HTTP DELETE - Delete Record
+# HTTP PUT/PATCH - Update Record
+@app.route('/update-price/<int:cafe_id>', methods=['PATCH'])
+def update_price(cafe_id):
+    new_price = request.args.get("new_price")
+    cafe = Cafe.query.get(cafe_id)
+    if cafe:
+        cafe.coffee_price = new_price
+        db.session.commit()
+        return jsonify(response={"success": "Successfully updated the price."})
+    return jsonify(error={"Not Found": "Sorry a cafe with that id was not found in the database."})
+
+
+# HTTP DELETE - Delete Record
+@app.route("/report-closed/<cafe_id>", methods=['DELETE'])
+def report_closed(cafe_id):
+    api_key = request.args.get("api-key")
+    if api_key == "TopSecretAPIKey":
+        cafe = Cafe.query.get(cafe_id)
+        if cafe:
+            db.session.delete(cafe)
+            db.session.commit()
+            return jsonify(response={"success": "Successfully deleted the cafe."})
+        return jsonify(error={"Not Found": "Sorry a cafe with that id was not found in the database."})
+    return jsonify(error={"Forbidden": "Sorry, that's not allowed. Make sure you have the correct api_key."}), 403
 
 
 if __name__ == '__main__':
