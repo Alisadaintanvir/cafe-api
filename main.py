@@ -56,7 +56,21 @@ def get_all():
     cafes = Cafe.query.all()
     return jsonify(cafe=[cafe.to_dict() for cafe in cafes])
 
+
+@app.route("/search")
+def search_cafe():
+    query_location = request.args.get("loc")
+    cafe = Cafe.query.filter_by(location=query_location).first()
+    if cafe:
+        return jsonify(cafe=cafe.to_dict())
+    return jsonify(error={"Not Found": "Sorry, we don't have a cafe at that location."})
+
+
 ## HTTP POST - Create Record
+@app.route("/add", methods=['POST'])
+def add_cafe():
+    if request.method == "POST":
+        pass
 
 ## HTTP PUT/PATCH - Update Record
 
